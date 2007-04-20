@@ -6,7 +6,7 @@
   Given a list of effect groups, and the covariates associated with each level, a bugs model file is written using ragged arrays corresponding to output from \code{\link{winBugsRaggedArray}}
 }
 \usage{
-writeBugsModel(file, effects, covariates, observations, family = c("bernoulli", "binomial", "poisson", "normal", "other"))
+writeBugsModel(file, effects, covariates, observations, family = c("bernoulli", "binomial", "poisson", "normal", "other"), spatial=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,6 +15,7 @@ writeBugsModel(file, effects, covariates, observations, family = c("bernoulli", 
   \item{covariates}{A list with names corresponding to effects and each element being a vector of covariates applicable at that level}
   \item{observations}{A character string giving the column of observations, or a vector where the first element is the observations and the remaning are offsets.}
   \item{family}{Response distribution}
+  \item{spatial}{spatial variable}
 }
 \details{
   The arguments to the function specify a generalised linear mixed model.  A file containing code for a corresponding bugs model is written.  The model uses ragged arrays to specify grouping factors, and includes covariates at the appropriate levels to aid in chain convergence.  It is intended that the user will edit this file before it's use.  The prior distributions in particular may not be appropriate.

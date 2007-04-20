@@ -1,11 +1,16 @@
 `writeBugsModel` <-
 function(file, effects, covariates, observations, 
-  family=c("bernoulli", "binomial", "poisson", "normal",  "other")) {
+  family=c("bernoulli", "binomial", "poisson", "normal",  "other"),
+  spatial=NULL) {
+
+# spatial is a character string of names of random effects
 
   if(!is.character(family)) {
     warning("family must be a character string, ie \"poisson\" or \"binomial\" ")
   }
   family = family[1]
+  if(!all(spatial %in% effects))
+    warning("spatial effects used which are not specified as random effects")
   
   offset = observations[-1]
   observations = observations[1]
@@ -57,6 +62,10 @@ function(file, effects, covariates, observations,
     cat(" + inprod2(beta", theE, "[] , X", theE, "[", theD, ",])", sep="")
     
   }   
+  # spatial
+  if(theE %in% spatial) {
+     cat("+ R", theE, "Spatial[Sspatial", theE, "[", theD, "]]", sep="")
+  }
   cat("\n")
   
   # subsequent effects, if any
@@ -83,6 +92,11 @@ function(file, effects, covariates, observations,
         cat(" + inprod2(beta", theE, "[] , X", theE, "[", theD, ",])", sep="")
     
       }   
+  # spatial
+  if(theE %in% spatial) {
+     cat("+ R", theE, "Spatial[", theD, "]", sep="")
+  }
+
   cat("\n")
         
     }
@@ -129,8 +143,12 @@ function(file, effects, covariates, observations,
     for(Deffect in seq(length(effects),1)) {
        cat(encodeString("", width=2*Deffect-2), "}#", effects[Deffect],"\n",sep="")
     }
-    
   
+  # the spatial distributions
+  for(Deffect in spatial) {  
+    cat("R", Deffect, "Spatial[1:N", Deffect, "Spatial] ~ car.normal(adj", Deffect, 
+        "[], weights", Deffect, "[], num", Deffect, "[], T", Deffect, "Spatial)\n", sep="")  
+  }  
   
   # the priors
   cat("\n\n# priors\n\n")
@@ -150,6 +168,10 @@ function(file, effects, covariates, observations,
   for(Deffect in effects) {
     cat("T", Deffect, " <- pow(SD", Deffect, ", -2)\n", sep="")
     cat("SD", Deffect, " ~ dunif(0, 100)\n", sep="")
+  }
+  for(Deffect in spatial) {
+       cat("T", Deffect, "Spatial <- pow(SD", Deffect, "Spatial, -2)\n", sep="")
+       cat("SD", Deffect, "Spatial ~ dunif(0, 100)\n", sep="")
   }
   
   cat("\n} # model\n") 

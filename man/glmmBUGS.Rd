@@ -6,7 +6,7 @@
   Creates ragged arrays, writes a model file, and generates sensible starting estimates.
 }
 \usage{
-glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"))
+glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,6 +16,8 @@ glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R
    \item{modelFile}{File for saving the bugs model}
   \item{initFile}{File for saving the function for generating initial values}
   \item{family}{distribution of responses}
+  \item{spatial}{Spatial adj matrix, in forms of ploygon, nb object or a list of adj and num}
+  \item{spatialEffect}{ spatial variable from data } 
 }
 \details{
 \code{glmmBUGS} calls the following functions:
@@ -68,12 +70,64 @@ data(Muscle)
 muscleRagged = glmmBUGS(conc ~ length, data=Muscle, effects="Strip", family="gaussian")
 startingValues = muscleRagged$startingValues
 source("getInits.R")
-# library(R2WinBUGS)
-# muscleResult = bugs(muscleRagged$ragged, getInits, parameters.to.save = names(getInits()), model.file="model.bug", n.chain=3, n.iter=1000, n.burnin=100, n.thin=10, program="winbugs")   
+\dontrun{
+ library(R2WinBUGS)
+ muscleResult = bugs(muscleRagged$ragged, getInits, parameters.to.save = names(getInits()), model.file="model.bug", n.chain=3, n.iter=1000, n.burnin=100, n.thin=10, program="winbugs")
+}
 data(muscleResult)
 muscleParams = restoreParams(muscleResult, muscleRagged$ragged)  
 summaryChain(muscleParams)
 checkChain(muscleParams)
-          
+
+# a spatial example
+\dontrun{
+library(diseasemapping)
+
+data(popdata)
+data(casedata)
+
+model = getRates(casedata, popdata, ~age*sex)
+ontario = getSMR(model, popdata, casedata)
+ontario = ontario@data[,c("CSDUID","Observed","logExpected")]
+popDataAdjMat = poly2nb(ontario,row.names=as.character(ontario[["CDSUID"]]))
+}
+
+data(popDataAdjMat)
+data(ontario)
+
+forBugs = glmmBUGS(formula=Observed + logExpected ~ 1,
+  effects="CSDUID",   family="poisson", spatial=popDataAdjMat,
+  data=ontario)
+
+startingValues = forBugs$startingValues
+
+source("getInits.R")
+
+\dontrun{
+ontarioResult = bugs(forBugs$ragged, getInits, parameters.to.save = names(getInits()),
+    model.file="model.bug", n.chain=3, n.iter=100, n.burnin=10, n.thin=2,
+      program="winbugs", debug=T)
+}
+
+data(ontarioResult)
+
+ontarioParams = restoreParams(ontarioResult, forBugs$ragged)
+
+ontarioSummary = summaryChain(ontarioParams)
+
+\dontrun{
+ontario = mergeBugsData(ontario, ontarioSummary)
+
+# get rid of CSDUID 3551034 and 3551035 because theyre only neighbours
+# of each other and they have no data
+ontario = ontario[! ontario$CSDUID \%in\% c("3551034", "3551035"),]
+spplot(ontario, "FittedCSDUID.mean")
+
+# posterior probability of having 4x excess risk
+postProb = apply(exp(ontarioParams$FittedCSDUID), 3, function(x) mean(x>4))
+ontario = mergeBugsData(ontario, postProb, newcol="postProb4", by.x="CSDUID")
+spplot(ontario, "postProb4")
+
+}
 }
 
