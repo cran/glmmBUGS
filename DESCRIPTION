@@ -1,12 +1,12 @@
 Package: glmmBUGS
 Type: Package
 Title: Generalised Linear Mixed Models with WinBUGS
-Version: 1.1
-Date: 2007-04-20
-Depends: MASS, R2WinBUGS, abind, spdep  
+Version: 1.2
+Date: 2008-11-24
+Depends: MASS, R2WinBUGS, abind, spdep, BRugs  
 Author: Patrick Brown
 Maintainer: Patrick Brown <patrick.brown@utoronto.ca>
 Description: works with R2WinBUGS, writing model files and dealing with unbalanced data
 License: GPL
-Revision: 41
-Packaged: Thu Nov 20 05:31:03 2008; theussl
+Revision: 44
+Packaged: Tue Nov 25 05:39:07 2008; theussl
