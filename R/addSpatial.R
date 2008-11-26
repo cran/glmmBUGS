@@ -22,6 +22,8 @@ addSpatial = function(map, raggedArray=NULL, effect=NULL) {
     theregions = attributes(map)$region.id
     map = list(num = sapply(map, length),
       adj = unlist(map)  )
+    names(map$num) = theregions
+
   } else {
     if(!all(c("adj", "num") %in% names(map))) {
       warning("adj or num are missing in the map")

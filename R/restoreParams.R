@@ -88,7 +88,6 @@ for(D in groups) {
      Nchain = dim(themeanOld)[2]
      torep = rep(1, length(ragged[[paste("S", randomEffects[1], sep="")]])-1)
      
-#     return(list(result, groups, randomEffects))
      
      for(D in randomEffects) {  
         theS = ragged[[paste("S", D, sep="")]]
@@ -150,7 +149,7 @@ for(D in groups) {
        thenames = names(ragged[[paste("S", Dsub, sep="")]])
        dimnames(thefitted)[[3]] = thenames[thenames != "end"]
 
-       result[[paste("Fitted", Dsub, sep="")]] = thefitted
+       result[[paste("FittedRate", Dsub, sep="")]] = exp(thefitted)
        
        
      }

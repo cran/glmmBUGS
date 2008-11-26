@@ -10,24 +10,16 @@ glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-\item{formula}{A formula for the fixed effects portion of the model.} 
-   \item{data}{A data frame containing the response, covariates, and group membership.}
-  \item{effects}{A vector of character strings containing the grouping levels, from most general to most specific}
+   \item{formula}{A formula for the fixed effects portion of the model} 
+   \item{data}{A data frame containing the response, covariates, and group membership}
+   \item{effects}{A vector of character strings containing the grouping levels, from most general to most specific}
    \item{modelFile}{File for saving the bugs model}
-  \item{initFile}{File for saving the function for generating initial values}
-  \item{family}{distribution of responses}
-  \item{spatial}{Spatial adj matrix, in forms of ploygon, nb object or a list of adj and num}
-  \item{spatialEffect}{ spatial variable from data } 
+   \item{initFile}{File for saving the function for generating initial values}
+   \item{family}{distribution of responses}
+   \item{spatial}{Spatial adj matrix, in forms of ploygon, nb object or a list of adj and num}
+   \item{spatialEffect}{ spatial variable from data } 
 }
 \details{
-\code{glmmBUGS} calls the following functions:
-\item{\code{\link{getDesignMatrix}}}{to convert factors and interactions to indicator variables and find which covariates apply at which levels}
-\item{\code{\link{winBugsRaggedArray}}}{ to prepare the ragged array}
-\item{ \code{\link{glmmPQLstrings}}}{ estimate starting values}
-\item{ \code{\link{writeBugsModel}}}{ to create a model file}
-\item{ \code{\link{getStartingValues}} }{to extract starting values from the glmmPQL result}
-\item{ \code{\link{startingFunction}} }{to write a function to generate random starting values}
-Type \code{glmmBUGS} on the R command line to see the source code, it provides a good summary of the roles of the various functions in the \code{glmmBUGS} package.
 
 
 Consider the following model, where \eqn{Y_{ijk}}{Y_ijk} is the number of absences from individual k from class j in school k.  
@@ -51,6 +43,17 @@ To aid in convergence, the bugs model is actually the following:
 
 and the funciton \code{\link{restoreParams}} subtracts the means from the random effects to restore the original set of equations.
 
+\code{glmmBUGS} calls the following functions: 
+\describe{
+\item{\code{\link{getDesignMatrix}}}{to convert factors and interactions to indicator variables and find which covariates apply at which levels}
+\item{\code{\link{winBugsRaggedArray}}}{ to prepare the ragged array}
+\item{\code{\link{glmmPQLstrings}}}{ estimate starting values}
+\item{\code{\link{writeBugsModel}}}{ to create a model file}
+\item{\code{\link{getStartingValues}} }{to extract starting values from the glmmPQL result}
+\item{\code{\link{startingFunction}} }{to write a function to generate random starting values}
+}
+Type \code{glmmBUGS} on the R command line to see the source code, it provides a good summary of the roles of the various functions in the \code{glmmBUGS} package.
+
 
 }
 \value{
@@ -64,19 +67,30 @@ Returns a list with the ragged array, from  \code{\link{winBugsRaggedArray}}, an
 \section{Warning}{You are strongly encouraged to modify the model file and the intial value function file prior to using them.}   
 
 \seealso{\code{\link{winBugsRaggedArray}}, \code{\link{glmmPQLstrings}} , \code{\link{writeBugsModel}}, \code{\link{getStartingValues}}, \code{\link{startingFunction}},\code{\link[R2WinBUGS:bugs]{bugs}}}
-\examples{
+
+\examples{ 
 library(nlme)
 data(Muscle)
 muscleRagged = glmmBUGS(conc ~ length, data=Muscle, effects="Strip", family="gaussian")
 startingValues = muscleRagged$startingValues
 source("getInits.R")
 
-library(R2WinBUGS)
-muscleResult = bugs(muscleRagged$ragged, getInits, parameters.to.save = names(getInits()), model.file="model.bug", n.chain=3, n.iter=1000, n.burnin=100, n.thin=10, program="openbugs")
 
+if(require(BRugs, quiet=TRUE) & require(R2WinBUGS, quiet=TRUE) ) {
+  muscleResult = bugs(muscleRagged$ragged, getInits, parameters.to.save = names(getInits()),
+                model.file="model.bug", n.chain=3, n.iter=1000, n.burnin=100, n.thin=10,
+                             program="openbugs") 
+ } else{
+	data(muscleResult)
+}
+  muscleParams = restoreParams(muscleResult, muscleRagged$ragged)  
+  summaryChain(muscleParams)
+  checkChain(muscleParams)
 muscleParams = restoreParams(muscleResult, muscleRagged$ragged)  
 summaryChain(muscleParams)
 checkChain(muscleParams)
+
+
 
 # a spatial example
 \dontrun{
@@ -88,7 +102,8 @@ data(casedata)
 model = getRates(casedata, popdata, ~age*sex)
 ontario = getSMR(model, popdata, casedata)
 ontario = ontario@data[,c("CSDUID","Observed","logExpected")]
-popDataAdjMat = poly2nb(ontario,row.names=as.character(ontario[["CDSUID"]]))
+library(spdep)
+popDataAdjMat = poly2nb(popdata,row.names=as.character(popdata[["CSDUID"]]))
 }
 
 data(popDataAdjMat)
@@ -103,9 +118,11 @@ startingValues = forBugs$startingValues
 source("getInits.R")
 
 \dontrun{
-ontarioResult = bugs(forBugs$ragged, getInits, parameters.to.save = names(getInits()),
-    model.file="model.bug", n.chain=3, n.iter=100, n.burnin=10, n.thin=2,
-      program="openbugs", debug=T)
+library(R2WinBUGS)
+ontarioResult = bugs(forBugs$ragged, getInits, 
+  parameters.to.save = names(getInits()),
+    model.file="model.bug", n.chain=3, n.iter=50, n.burnin=10, n.thin=2,
+      program="winbugs", debug=T)
 }
 
 data(ontarioResult)
@@ -115,17 +132,20 @@ ontarioParams = restoreParams(ontarioResult, forBugs$ragged)
 ontarioSummary = summaryChain(ontarioParams)
 
 \dontrun{
-ontario = mergeBugsData(ontario, ontarioSummary)
+
+ontario = mergeBugsData(popdata, ontarioSummary)
 
 # get rid of CSDUID 3551034 and 3551035 because theyre only neighbours
 # of each other and they have no data
 ontario = ontario[! ontario$CSDUID \%in\% c("3551034", "3551035"),]
-spplot(ontario, "FittedCSDUID.mean")
+spplot(ontario, "FittedRateCSDUID.mean")
 
 # posterior probability of having 4x excess risk
 postProb = apply(exp(ontarioParams$FittedCSDUID), 3, function(x) mean(x>4))
 ontario = mergeBugsData(ontario, postProb, newcol="postProb4", by.x="CSDUID")
 spplot(ontario, "postProb4")
+
+
 
 }
 }
