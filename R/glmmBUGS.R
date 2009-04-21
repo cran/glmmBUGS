@@ -15,11 +15,17 @@ spatial=NULL, spatialEffect = NULL) {
 # get design matrix
 data = getDesignMatrix(formula, data, effects)
 
-# get rid of missing values
-data = na.omit(data)
-
 covariates = attributes(data)$covariates
 observations = attributes(data)$response
+
+
+# get rid of rows where there are NA's in covariates
+# but NA's in response are ok.
+if(length(covariates)) {
+  data = data[!apply(data[,unlist(covariates), drop=F], 1, 
+    function(qq) any(is.na(qq))), ]
+}
+
 
  # create the ragged array
 ragged = winBugsRaggedArray(data, effects =effects,
@@ -30,9 +36,12 @@ if(!is.null(spatial))
 	ragged = addSpatial(spatial, ragged, spatialEffect)
 
 # run pql model
-thepql = glmmPQLstrings(effects=effects, covariates = covariates, 
-  observations = observations, data=data, family=family)
 
+# get rid of missing values
+dataForPQL = na.omit(data)
+
+thepql = glmmPQLstrings(effects=effects, covariates = covariates, 
+  observations = observations, data=dataForPQL, family=family)
  
 # extract properly formatted starting values from the pql
 startingValues = getStartingValues(pql=thepql, ragged=ragged) 
