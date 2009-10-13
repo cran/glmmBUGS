@@ -6,7 +6,7 @@
   Creates ragged arrays, writes a model file, and generates sensible starting estimates.
 }
 \usage{
-glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL)
+glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL,reparam=NULL, prefix=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,6 +18,8 @@ glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R
    \item{family}{distribution of responses}
    \item{spatial}{Spatial adj matrix, in forms of ploygon, nb object or a list of adj and num}
    \item{spatialEffect}{ spatial variable from data } 
+  \item{reparam}{vector of random effect names, subtract covariates at this level from the intercept. }
+    \item{prefix}{string to append to object names}
 }
 \details{
 
@@ -60,7 +62,8 @@ Type \code{glmmBUGS} on the R command line to see the source code, it provides a
 Returns a list with the ragged array, from  \code{\link{winBugsRaggedArray}}, and the list of starting values from \code{\link{getStartingValues}}.  Writes a model file and an initial value function.  Note that the initial value function in \code{initFile} will look for an object called \code{startingValues}, which does not exist as this is part of a list.  Either create \code{startingValues <- result$startingValues} or edit \code{initFile}.
 }
 
-\references{"Handling unbalanced datasets" in the "Tricks: Advanced Use of the BUGS Language" section of the bugs manual, at \url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html\#HandlingUnbalancedDatasets}}
+\references{"Handling unbalanced datasets" in the "Tricks: Advanced Use of the BUGS Language" 
+section of the bugs manual, at \url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html}}
 \author{Patrick Brown, \email{patrick.brown@utoronto.ca}}
 
 \note{glmmBUGS uses the \code{inprod2} function, which isn't implimented in OpenBugs, the model file will have to be modified for use with OpenBUGS.}

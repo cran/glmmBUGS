@@ -6,7 +6,8 @@
   Suitable for unbalanced data.
 }
 \usage{
-winBugsRaggedArray(data, effects = names(data)[-length(names(data))], covariates = NULL, observations = names(data)[length(names(data))], returnData = FALSE)
+winBugsRaggedArray(data, effects = names(data)[-length(names(data))], covariates = NULL, observations = names(data)[length(names(data))], returnData = FALSE,
+prefix=NULL, reparam=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,6 +16,8 @@ winBugsRaggedArray(data, effects = names(data)[-length(names(data))], covariates
   \item{covariates}{A list with names corresponding to effects and each element being a vector of covariates applicable at that level}
   \item{observations}{A character string giving the column of observations, or a vector where the first element is the observations and the remaning are offsets.}
   \item{returnData}{If true, returns the re-ordered data frame as well as the data frame}
+  \item{prefix}{Character string to be appended to variable names}
+  \item{reparam}{Vector of effect names, reparametrize the intercept by subtracting the mean of covariates at this level.}
 }
 \details{
    This funciton creates a list of data suitable for passing to the \code{\link[R2WinBUGS:bugs]{bugs}} function, suitable for implimentation as a ragged array.  The output can be passed to \code{\link{getStartingValues}} to manipulate the output from \code{\link{glmmPQLstrings}}, and to \code{\link{restoreParams}} to restore the original parametrisation from bugs output.
@@ -29,7 +32,9 @@ A list with the following components
 \item{}{vector of observations.}
 
 }
-\references{"Handling unbalanced datasets" in the "Tricks: Advanced Use of the BUGS Language" section of the bugs manual, at \code{\url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html#HandlingUnbalancedDatasets}}}
+\references{"Handling unbalanced datasets" in the 
+"Tricks: Advanced Use of the BUGS Language" section of the bugs manual, at 
+\url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html}}
 \author{Patrick Brown, \email{patrick.brown@utoronto.ca}}
 \note{}
 \seealso{\code{\link[R2WinBUGS:bugs]{bugs}} }

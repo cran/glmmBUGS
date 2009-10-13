@@ -3,17 +3,19 @@ function(data,
     effects = names(data)[-length(names(data))], 
     covariates=NULL, 
     observations=names(data)[length(names(data))],
-    returnData=FALSE) {
+    returnData=FALSE, prefix=NULL, reparam=FALSE) {
 
   # if a vector of covariates is specified, assume they're all observation level
-  if(!is.list(covariates)) covariates = list(observations = covariates)
+  #if(!is.list(covariates)) covariates = list(observations = covariates)
+  if(!is.list(covariates)) covariates = list(covariates)
   
   # check to see covariate categories correspond to effects
   covNames= ! (names(covariates) %in% effects)
   if(any(covNames)) {
-     if(sum(covNames>1)) 
+     if(sum(covNames>1)){#add here
       warning("names of covariates don't match effect names")
      names(covariates)[covNames] = "observations" 
+     }#added here
   }
    
  
@@ -27,47 +29,55 @@ function(data,
   }
 
   # reorder the data
-  if(length(effects)>1)
-    theorder = do.call(order, data[,effects])
-  else
-    theorder = order(data[,effects])
+  if(length(effects)>1) {theorder = do.call(order, data[,effects])
+  }else theorder = order(data[,effects])
   data=data[theorder,]
 
-  result[[paste("N", effects[1], sep="")]] = length(unique(data[,effects[1]]))
+  result[[paste("N", prefix, effects[1], sep="")]] = length(unique(data[,effects[1]]))
 
   # get the ragged array sequences
   if(Neffects>1) {
     for(D in 2:Neffects) {
       data[,effects[D]] = paste(data[,effects[D-1]], data[,effects[D]], sep="/")  
-      result[[paste("S", effects[D-1], sep="")]] = 
+      result[[paste("S", prefix, effects[D-1], sep="")]] = 
         getRaggedSeq(data[,effects[c(D-1, D)]])
     }
   }
   Sfull = seq(1, dim(data)[1])
 
   # observations
-  result[[paste("S", effects[Neffects], sep="")]] =
+  result[[paste("S", prefix, effects[Neffects], sep="")]] =
     getRaggedSeq(cbind(data[,effects[Neffects]], Sfull)) 
   for(Dobservation in observations)
-    result[[Dobservation]] = data[,Dobservation] 
+    result[[paste(prefix, Dobservation, sep="")]] = data[,Dobservation] 
 
    # get covariates
  
-  # obseration level covariates
-  Dlevel = "observations"
 
+  #Dlevel = "observations"
+   Dlevel = paste(prefix,effects[1],sep="")
+
+      
   # change data dataframe to a matrix
   data = as.matrix(data[,unlist(covariates), drop=FALSE])
 
   if(!is.null(covariates[[Dlevel]])) {
-      result[[paste("X", Dlevel, sep="")]] =  
+      result[[paste("X",  Dlevel, sep="")]] =
         data[Sfull,covariates[[Dlevel]]] 
+  }
+  
+    # obseration level covariates
+  Plevel = paste(prefix, "observations", sep="")
+    
+  if(!is.null(covariates[[Plevel]])) {
+      result[[paste("X",  Plevel, sep="")]] =
+        data[Sfull,covariates[[Plevel]]] 
   }
   
 
   # the other levels  
   for(Dlevel in rev(effects)) {
-
+     Dlevel = paste(prefix, Dlevel, sep="")
     # extract the covariates at this level
     Sfull = Sfull[result[[paste("S", Dlevel, sep="")]]]
     Sfull = Sfull[-length(Sfull)] 
@@ -86,10 +96,35 @@ function(data,
       }   
     }
   }
+  
 
-   if(returnData) 
-    list(data=data, result=result)
-  else
+ # add reparam 
+ 
+ if(is.character(reparam))   {
+reparamName = reparam
+reparam = list()
+for(D in reparamName)
+reparam[[D]] = NULL
+ } 
+ 
+for(D in names(reparam)){
+     if(D %in% names(covariates)){
+       theXname= paste("X", D, "reparam", sep="")  
+       if(!is.null(reparam[[D]])){
+         result[[theXname]] = reparam[[D]]
+         }else{result[[theXname]] = apply(as.matrix(data[, covariates[[D]]]), 2, mean) }
+       
+      } 
+ }    
+     
+
+attributes(result)$prefix = prefix
+attributes(result)$covariates = covariates
+
+ if(returnData) 
+    result=list(data=data, result=result)
+  
+  
     return(result)
 }
 

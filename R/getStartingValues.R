@@ -1,5 +1,5 @@
 `getStartingValues` <-
-function(pql, ragged) {
+function(pql, ragged, prefix=NULL, reparam=NULL) {
 # make a vector of starting values
 # observations and effects are character strings
 # covariates is a covariate list given to winBugsRaggedArray
@@ -7,9 +7,11 @@ function(pql, ragged) {
 
 # fixed effects  
 
-startingValues = list(
-  intercept = pql$coef$fixed["(Intercept)"]  
-)
+startingValues = list()  
+startingValues[[paste("intercept",prefix, sep="")]]=  pql$coef$fixed["(Intercept)"]  
+
+
+#names(startingValues)[1]<-paste(prefix,names(startingValues)[1],sep="")
 
 covariates = pql$covariates
 effects = pql$effects
@@ -26,7 +28,7 @@ if(is.list(covariates)) {
    startingValues$betas = pql$coef$fixed[names(pql$coef$fixed) != "(Intercept)"] 
 }
 
-# random effects
+# random effects                                                                         
 # data in the same order as the ragged array
   subdata = pql$data[,pql$effects]
   if(length(pql$effects)==1) {
@@ -40,18 +42,22 @@ if(is.list(covariates)) {
     theorder = do.call(order, subdata)
   }
   thedata=pql$data[theorder,]
-
+#  thedata =pql$data
+  # dont use observation level covariates in predictions
+  thedata[,covariates$observations]=0
+  
+  
 for(Deffect in seq(length(pql$effects), 1)) {
   theE = pql$effects[Deffect]
-
+  theE = paste(prefix, theE, sep="")
+  
   # get one row of data for each different value of the effect
   theS = ragged[[paste("S", theE, sep="")]]
   theS = theS[-length(theS)]
- # thedata = thedata[theS,]
 
+  thedata = thedata[theS,]
   # get predicted values
-  thepred = predict(pql, level=Deffect)[theorder]
-  # names(thepred) = ?????
+  thepred = predict(pql, level=Deffect, newdata=thedata)#[theorder]
   
   # strip white space to make sure everything's compatible
   names(theS) = gsub(" ", "", names(theS))
@@ -71,11 +77,12 @@ for(Deffect in seq(length(pql$effects), 1)) {
 }
 #
 ## covariate matrix
+names(pql$modelStruct$reStruct)<-paste(prefix,names(pql$modelStruct$reStruct),sep="")
 startingValues$vars = lapply(pql$modelStruct$reStruct, function(x) pql$sigma^2 * as.matrix(x)) 
 #
 
 # spatial
-spatialEffect = grep("^N[[:alnum:]]+Spatial$" , names(ragged), value=T)
+spatialEffect = grep("^N[[:graph:]]+Spatial$" , names(ragged), value=T)
 if(length(spatialEffect) ) {
 spatialEffect = paste("R", gsub("^N", "", spatialEffect), sep="")
   spatialEffectIndep = gsub("Spatial$", "", spatialEffect)
@@ -112,7 +119,7 @@ spatialFactor = 0.5
   
   # starting values for variances
     startingValues$vars[[spatialEffectVar[D] ]] =
-    sqrt(
+    sqrt(              
       startingValues$vars[[spatialEffectIndepVar[D] ]]^2*spatialFactor
       )
 
@@ -125,7 +132,23 @@ spatialFactor = 0.5
 }
 
 
+ if(is.character(reparam))   {
+reparamName = reparam
+reparam = list()
+for(D in reparamName)
+reparam[[D]] = NULL
+ } 
+
+ for(D in names(reparam)){
+     if(D %in% names(covariates)){
+       theName= paste("X", D, "reparam", sep="")  
+       startingValues[[paste("intercept",prefix, sep="")]] = startingValues[[paste("intercept",prefix, sep="")]] +sum(pql$coef$fixed[covariates[[D]]] * ragged[[theName]])
+      } 
+ }  
+
+ 
 return(startingValues)
 
 }
 
+                                                       

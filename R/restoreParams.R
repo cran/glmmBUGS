@@ -1,6 +1,6 @@
 `restoreParams` <-
 function(bugsResult, ragged=NULL) {
-
+                              
 thearray = bugsResult$sims.array
 parnames = dimnames(thearray)[[3]]
 # vector valued parameters
@@ -147,16 +147,34 @@ for(D in groups) {
        }
         
        theID = dimnames(result[[D]])[[3]]
-       theID = gsub("[[:alnum:]]+\\[", "", theID)
+       theID = gsub("[[:graph:]]+\\[", "", theID)
        theID = gsub("\\]$", "", theID)
        dimnames(result[[D]])[[3]] = thenames[as.integer(theID)]
        
        # get the fitted risk, and add names
-       thefitted = grep(paste("^R", Dsub, "\\[[[:digit:]]+\\]$", sep=""),
-        dimnames(thearray)[[3]], value=T)
-       thefitted = thearray[,,thefitted]
-       thenames = names(ragged[[paste("S", Dsub, sep="")]])
-       dimnames(thefitted)[[3]] = thenames[thenames != "end"]
+       thefitted = array(0, c(dim(result[[D]])[1:2], length(thenames)),
+        dimnames = list(NULL, NULL, thenames) )
+       thefitted[,,dimnames(result[[D]])[[3]]] = result[[D]] 
+       
+       DsubR = paste("R", Dsub, sep="")
+       thefitted[,,dimnames(result[[DsubR]])[[3]]] = 
+                thefitted[,,dimnames(result[[DsubR]])[[3]]] +
+                result[[DsubR]]
+       
+       # regions which dont have Rstuff
+       regionsNoV = thenames[!thenames %in% dimnames(result[[DsubR]])[[3]] ]
+
+       if(length(regionsNoV)) {
+
+       # expand intercept and variance
+       interceptBig = array(result$intercept, c(dim(result$intercept),length(regionsNoV)))
+       varBig =    array(result[[paste("SD",Dsub,sep="")]], 
+        c(dim(result$intercept),length(regionsNoV)))
+
+       thefitted[,,regionsNoV] = thefitted[,,regionsNoV] + 
+          rnorm(prod(dim(varBig)), interceptBig, varBig)
+       
+       }
 
        result[[paste("FittedRate", Dsub, sep="")]] = exp(thefitted)
        
@@ -167,7 +185,7 @@ for(D in groups) {
      
      fixedEffects = grep("^X", names(ragged), value=TRUE)
 
-
+  #if there are any fixed effects, format the posterior samples of the coefficients
 if(length(fixedEffects)){
      fixedEffects = substr(fixedEffects, 2, nchar(fixedEffects))
 
