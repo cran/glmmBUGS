@@ -164,7 +164,15 @@ if(is.null(ragged)) {
       if(!is.null(ragged[[DX]])) {
        # if there are covariates at this level
        theX = t(ragged[[DX]])
-       thebeta = result[[Dbeta]]
+	   if(any(names(result)==Dbeta)){
+       		thebeta = result[[Dbeta]]
+		} else {
+			if(D %in% dimnames(result$betas)[[3]]) {
+			  thebeta = result$betas[,,D,drop=F]
+			} else {
+				warning("cannot find ",D," , ", DX)
+			}
+		}
        if(is.matrix(thebeta))
         thebeta = array(thebeta, c(dim(thebeta), 1))
        for(Dchain in 1:Nchain) {
@@ -238,7 +246,7 @@ if(is.null(ragged)) {
         
       # put these results into the posterior simulations array
       result[[DsubR]] = abind(result[[DsubR]], VfornoV, along=3)
-      fittedForNoV = VforNoV + array(result$intercept, dimNoV)
+      fittedForNoV = VfornoV + array(result$intercept, dimNoV)
 # add covariates if we have them
 if(!is.null(extraX)) {
 haveExtraX = rownames(extraX)[rownames(extraX) %in% VfornoV]
