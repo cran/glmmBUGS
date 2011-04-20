@@ -6,7 +6,9 @@
   Creates ragged arrays, writes a model file, and generates sensible starting estimates.
 }
 \usage{
-glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL,reparam=NULL, prefix=NULL)
+glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", 
+family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL,
+reparam=NULL, prefix=NULL, priors=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,10 +18,14 @@ glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R
    \item{modelFile}{File for saving the bugs model}
    \item{initFile}{File for saving the function for generating initial values}
    \item{family}{distribution of responses}
-   \item{spatial}{Spatial adj matrix, in forms of ploygon, nb object or a list of adj and num}
+   \item{spatial}{For Markov Random Field models, a polygons or adjacency matrix.  
+   For Geostatistical models, a SpatialPoints objects, a matrix or data frame with columns "x" and "y", 
+   or a vector of complex numbers.}
    \item{spatialEffect}{ spatial variable from data } 
   \item{reparam}{vector of random effect names, subtract covariates at this level from the intercept. }
     \item{prefix}{string to append to object names}
+    \item{priors}{List or vector where names refer to parameters and elements are prior distributions, 
+    for example \code{list(SDsite="dunif(0,10)")}.}
 }
 \details{
 
@@ -75,16 +81,27 @@ section of the bugs manual, at \url{http://mathstat.helsinki.fi/openbugs/data/Do
 library(nlme)
 data(Muscle)
 
+
 muscleRagged = glmmBUGS(conc ~ length, data=Muscle, effects="Strip", family="gaussian")
 startingValues = muscleRagged$startingValues
 
 \dontrun{
+# run with winbugs
 source("getInits.R")
-require(BRugs)
 require(R2WinBUGS)  
 muscleResult = bugs(muscleRagged$ragged, getInits, parameters.to.save = names(getInits()),
                 model.file="model.bug", n.chain=3, n.iter=1000, n.burnin=100, n.thin=10,
-                             program="openbugs") 
+                             program="winbugs", working.directory=getwd()) 
+
+# a jags example
+require(R2jags)
+muscleResultJags = jags(
+muscleRagged$ragged, getInits, parameters.to.save = names(getInits()),
+                model.file="model.bug", n.chain=3, n.iter=1000, 
+                n.burnin=100, n.thin=10,
+                working.directory=getwd()) 
+
+
 }
  
 data(muscleResult)
@@ -115,6 +132,7 @@ data(ontario)
 
 forBugs = glmmBUGS(formula=observed + logExpected ~ 1,
   effects="CSDUID",   family="poisson", spatial=popDataAdjMat,
+  spatialEffect="CSDUID",
   data=ontario)
 
 startingValues = forBugs$startingValues
@@ -126,7 +144,7 @@ library(R2WinBUGS)
 ontarioResult = bugs(forBugs$ragged, getInits, 
   parameters.to.save = names(getInits()),
     model.file="model.bug", n.chain=3, n.iter=50, n.burnin=10, n.thin=2,
-      program="winbugs", debug=T)
+      program="winbugs", debug=T,working.directory=getwd())
 }
 
 data(ontarioResult)
@@ -152,5 +170,56 @@ spplot(ontario, "postProb")
 
 
 }
+
+# geostatistical example
+
+\dontrun{
+library(geoRglm)
+data(rongelap)
+}
+rongelap= read.table(url("http://www.leg.ufpr.br/lib/exe/fetch.php/pessoais:paulojus:mbgbook:datasets:rongelap.txt"),header=TRUE)
+
+library(spdep)
+coordinates(rongelap) = ~cX+cY
+
+
+rongelap$logOffset = log(rongelap$time)
+rongelap$site = seq(1, length(rongelap$time)) 
+  
+forBugs = glmmBUGS(
+formula=counts + logOffset ~ 1, family="poisson",
+    data=rongelap@data, effects="site", spatial=rongelap,
+    priors=list(phisite="dgamma(100,1)"))
+    
+startingValues = forBugs$startingValues
+startingValues$phi$site = 100
+
+source("getInits.R")
+
+\dontrun{
+
+rongelapResult = bugs(forBugs$ragged, getInits, 
+  parameters.to.save = names(getInits()),
+    model.file="model.bug", n.chain=2, n.iter=20, n.burnin=4, n.thin=2,
+      program="winbugs", debug=TRUE,
+      working.directory=getwd())
+
+% save(rongelapResult, file="pkg/glmmBUGS/data/rongelapResult.RData")
+}
+
+data(rongelapResult)
+
+rongelapParams = restoreParams(rongelapResult, forBugs$ragged)      
+      
+checkChain(rongelapParams)
+
+rongelapParams$siteGrid = CondSimuPosterior(rongelapParams, rongelap,gridSize=100) 
+
+rongelapSummary=summaryChain(rongelapParams)
+
+# plot posterior probabilities of being above average
+image(rongelapSummary$siteGrid$pgt0)
+
+
 }
 

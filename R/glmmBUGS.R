@@ -1,5 +1,6 @@
-glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", family = c("bernoulli", "binomial", "poisson", "gaussian"), 
-    spatial = NULL, spatialEffect = NULL, reparam = NULL, prefix=NULL) 
+glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", 
+		family = c("bernoulli", "binomial", "poisson", "gaussian"), 
+    spatial = NULL, spatialEffect = NULL, reparam = NULL, prefix=NULL, priors=NULL) 
 {
 
     data = getDesignMatrix(formula, data, effects)
@@ -15,8 +16,16 @@ glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile 
     ragged = winBugsRaggedArray(data, effects = effects, covariates = covariates, 
         observations = observations, prefix= prefix , reparam=reparam)  
     #ragged$Xreparam = ????
-    if (!is.null(spatial)) 
+
+	geostat=FALSE
+    if (!is.null(spatial)) {
+		# if spatial is a data frame, matrix, or spatialPoints or vector, use a geostatistical model
+		if(class(spatial) %in% c("SpatialPoints","SpatialPointsDataFrame","complex","data.frame","matrix"))
+			geostat=TRUE
+	
         ragged = addSpatial(spatial, ragged, spatialEffect, prefix= prefix)
+	}
+	
     thepql = glmmPQLstrings(effects = effects, covariates = covariates, 
         observations = observations, data = data, family = family)
     startingValues = getStartingValues(pql = thepql, ragged = ragged, prefix=prefix, reparam = reparam )
@@ -33,7 +42,9 @@ glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile 
     
     writeBugsModel(file=modelFile, effects = effects, covariates = covariates, 
         observations = observations, family = family, spatial = spatialEffect,
-        prefix= attributes(ragged)$prefix, reparam =reparam)
+		geostat=geostat,
+        prefix= attributes(ragged)$prefix, reparam =reparam, priors=priors)
+
          return(list(ragged = ragged, startingValues = startingValues, 
         pql = thepql))
 }

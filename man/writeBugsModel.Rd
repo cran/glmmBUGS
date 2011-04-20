@@ -11,6 +11,7 @@ Given a list of effect groups, and the covariates associated with each level, a 
 \usage{
 writeBugsModel(file, effects, covariates, observations, 
 family = c("bernoulli", "binomial", "poisson", "normal", "other"), spatial = NULL, 
+geostat=FALSE, 
 prefix = "",reparam=NULL, brugs=FALSE, priors=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -33,6 +34,7 @@ Response distribution
   \item{spatial}{
 name of the spatial random effect
 }
+\item{geostat}{Is this a geostatistical random effect?  Defaults to FALSE for the Besag, York and Mollie discrete spatial variation model}
   \item{prefix}{
 the prefix 
 }
