@@ -6,7 +6,9 @@
   Suitable for unbalanced data.
 }
 \usage{
-winBugsRaggedArray(data, effects = names(data)[-length(names(data))], covariates = NULL, observations = names(data)[length(names(data))], returnData = FALSE,
+winBugsRaggedArray(data, effects = names(data)[-length(names(data))], 
+covariates = NULL, observations = names(data)[length(names(data))], 
+returnData = FALSE,
 prefix=NULL, reparam=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -36,12 +38,13 @@ A list with the following components
 "Tricks: Advanced Use of the BUGS Language" section of the bugs manual, at 
 \url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html}}
 \author{Patrick Brown, \email{patrick.brown@utoronto.ca}}
-\note{}
+ 
 \seealso{\code{\link[R2WinBUGS:bugs]{bugs}} }
 \examples{
 library(nlme)
 data(Muscle)
-muscleRagged = winBugsRaggedArray(Muscle, effects="Strip",  observations="conc",
+muscleRagged = winBugsRaggedArray(Muscle, effects="Strip",  
+observations="conc",
   covariates=list(observations="length"))
 
 }

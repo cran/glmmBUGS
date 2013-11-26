@@ -1,51 +1,64 @@
-checkChain = function(chain, parameters=NULL) {
-if(is.array(chain))
+plotOne = function(mat, main=NULL) {
+	matplot(mat, lty=1, type="l",  ylab=main)
+}
+
+checkChain = function(chain, parameters=NULL, oneFigure=TRUE) {
+
+if(is.array(chain)) {
   chain = list(beta=chain)
+}
+
 if(is.null(parameters)) {
-  betas = grep("^beta", names(chain), value=TRUE)
-  betas = c( grep("intercept", names(chain), value=TRUE), betas)
-  betas  = c(grep("^SD", names(chain), value=TRUE), betas)
-  betas  = c(grep("^phi", names(chain), value=TRUE), betas)
-  
- 
-  if(length(betas) > 100)
-    betas = betas[1:100]
- 
-
-
+	parameters = grep("^sd|range|intercept|betas",
+			names(chain),value=TRUE,ignore.case=TRUE)
+}
   # find out the number of parameters
-  themat = unlist(lapply(chain[betas], is.matrix))
+  	scalars = unlist(lapply(chain[parameters], is.matrix))
+	notScalars = parameters[!scalars]
+	scalars = parameters[scalars]
+	betas = NULL
+	if(length(notScalars) & any(names(chain)=="betas"))  {
+		betas = notScalars[
+				notScalars %in% dimnames(chain$betas)[[3]] 
+						]
+	}
+	parArray = notScalars[
+			unlist(lapply(chain[notScalars], 
+					function(qq) length(dim(qq))==3)
+		)
+	]
+	
 
-  thepars = c(betas[themat], 
-    unlist(lapply(chain[betas[!themat]], function(qq)
-      dimnames(qq)[[3]])))
+	
+	if(oneFigure) {
+		Nplots = length(scalars) + length(betas)
 
-  } else {
-   thepars = parameters 
-   betas=c(parameters, "betas")
+		for(Darray in parArray)
+			Nplots = Nplots + dim(chain[[Darray]])[3]
+	
+		if(Nplots==0) warning("Nothing to plot")
+		if(Nplots > 16) warning("Creating", Nplots, "plots, this might not work")
+		
+	  par(mfrow=c(ceiling(Nplots/4),min(c(4, Nplots))),
+			  mar=c(1.5,2.5,0,0), mgp=c(1.5, 0.5, 0))
   }
-
-
-  par(mfrow=c(ceiling(length(thepars)/4),min(c(4, length(thepars)))), mar=c(2,2,1,0))
   
+  for(D in scalars)
+	  plotOne(chain[[D]], D)
+
+  for(D in betas)
+	  plotOne(chain$betas[,,D], D)
   
-  for(Dbeta in betas) {
-     if(length(dim(chain[[Dbeta]])) == 2) {
-        plotOne(chain[[Dbeta]], Dbeta)
-     } else {
-        thenames =dimnames(chain[[Dbeta]])[[3]] 
-        for(Dpar in thenames[thenames %in% thepars] ) {
-          plotOne(chain[[Dbeta]][,,Dpar], Dpar)
-        }
-     }   
+  for(D in parArray){
+	  Dhere = chain[[D]]
+	  Shere = dimnames(Dhere)[[3]]
+	  if(is.null(Shere)) Shere = seq(1, dim(Dhere)[3])
+	  for(D2 in Shere) {
+		  plotOne(Dhere[,,D2], paste(D, ":", D2,sep=""))		 
+	  }
   }
-
-
-  
+	  
+	  
   invisible() 
 }
 
-plotOne = function(mat, main=NULL) {
-
- matplot(mat, lty=1, type="l", main=main)
-}

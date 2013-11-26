@@ -6,9 +6,14 @@
   Creates ragged arrays, writes a model file, and generates sensible starting estimates.
 }
 \usage{
-glmmBUGS(formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", 
-family = c("bernoulli", "binomial", "poisson", "gaussian"), spatial=NULL, spatialEffect = NULL,
-reparam=NULL, prefix=NULL, priors=NULL)
+glmmBUGS(formula, data, effects, modelFile = "model.txt", 
+initFile = "getInits.R", 
+family = c("bernoulli", "binomial", "poisson", "gaussian"), 
+spatial=NULL, spatialEffect = NULL,
+reparam=NULL, prefix=NULL, priors=NULL,
+brugs=length(grep("unix|linux",
+					.Platform$OS.type,
+					ignore.case=TRUE)))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +31,7 @@ reparam=NULL, prefix=NULL, priors=NULL)
     \item{prefix}{string to append to object names}
     \item{priors}{List or vector where names refer to parameters and elements are prior distributions, 
     for example \code{list(SDsite="dunif(0,10)")}.}
+    \item{brugs}{compatiblity with OpenBUGS, using the inprod function in place of inprod2, defaults to FALSE on windows and TRUE on unix platforms.}
 }
 \details{
 
@@ -125,7 +131,7 @@ ontario = ontario@data[,c("CSDUID","observed","logExpected")]
 
 library(spdep)
 popDataAdjMat = poly2nb(popdata,row.names=as.character(popdata[["CSDUID"]]))
-}
+
 
 data(popDataAdjMat)
 data(ontario)
@@ -139,13 +145,13 @@ startingValues = forBugs$startingValues
 
 source("getInits.R")
 
-\dontrun{
+ 
 library(R2WinBUGS)
 ontarioResult = bugs(forBugs$ragged, getInits, 
   parameters.to.save = names(getInits()),
     model.file="model.bug", n.chain=3, n.iter=50, n.burnin=10, n.thin=2,
       program="winbugs", debug=T,working.directory=getwd())
-}
+
 
 data(ontarioResult)
 
@@ -157,7 +163,6 @@ ontarioSummary = summaryChain(ontarioParams)
 postProb = apply(ontarioParams$FittedRCSDUID, 3, function(x) mean(x>log(10)) )
 hist(postProb)
 
-\dontrun{
 
 ontario = mergeBugsData(popdata, ontarioSummary)
 
@@ -176,8 +181,10 @@ spplot(ontario, "postProb")
 \dontrun{
 library(geoRglm)
 data(rongelap)
-}
-rongelap= read.table(url("http://www.leg.ufpr.br/lib/exe/fetch.php/pessoais:paulojus:mbgbook:datasets:rongelap.txt"),header=TRUE)
+
+rongelap= read.table(url(
+"http://www.leg.ufpr.br/lib/exe/fetch.php/pessoais:paulojus:mbgbook:datasets:rongelap.txt"
+),header=TRUE)
 
 library(spdep)
 coordinates(rongelap) = ~cX+cY
@@ -196,7 +203,7 @@ startingValues$phi$site = 100
 
 source("getInits.R")
 
-\dontrun{
+
 
 rongelapResult = bugs(forBugs$ragged, getInits, 
   parameters.to.save = names(getInits()),
@@ -205,7 +212,6 @@ rongelapResult = bugs(forBugs$ragged, getInits,
       working.directory=getwd())
 
 % save(rongelapResult, file="pkg/glmmBUGS/data/rongelapResult.RData")
-}
 
 data(rongelapResult)
 
@@ -219,7 +225,7 @@ rongelapSummary=summaryChain(rongelapParams)
 
 # plot posterior probabilities of being above average
 image(rongelapSummary$siteGrid$pgt0)
-
+}
 
 }
 

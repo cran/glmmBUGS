@@ -12,7 +12,7 @@ Given a list of effect groups, and the covariates associated with each level, a 
 writeBugsModel(file, effects, covariates, observations, 
 family = c("bernoulli", "binomial", "poisson", "normal", "other"), spatial = NULL, 
 geostat=FALSE, 
-prefix = "",reparam=NULL, brugs=FALSE, priors=NULL)
+prefix = "",reparam=NULL, brugs=TRUE, priors=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,7 +40,7 @@ the prefix
 }
   \item{reparam}{vector of random effect names, subtract covariates at this level from the intercept.
 }
-\item{brugs}{make the model file compatible with BRugs by using the inprod function in place of inprod2}
+\item{brugs}{make the model file compatible with OpenBugs by using the inprod function in place of inprod2}
 \item{priors}{character string of prior distributions, with the name of each element referring to the parameter it is the prior for}
 
 }
@@ -58,15 +58,11 @@ section of the bugs manual, at \url{http://mathstat.helsinki.fi/openbugs/data/Do
 \author{
 Patrick Brown, \email{patrick.brown@utoronto.ca}
 }
-\note{
-%%  ~~further notes~~
-}
+ 
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 \section{Warning }{You are strongly encouraged to modify the model file prior to using it.}
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
+ 
 \examples{
 writeBugsModel("model.bug", effects="Strip",  observations="conc",
   covariates=list(observations="length"),

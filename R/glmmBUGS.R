@@ -1,8 +1,13 @@
-glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile = "getInits.R", 
+glmmBUGS <- function (formula, data, effects, modelFile = "model.txt", 
+			initFile = "getInits.R", 
 		family = c("bernoulli", "binomial", "poisson", "gaussian"), 
-    spatial = NULL, spatialEffect = NULL, reparam = NULL, prefix=NULL, priors=NULL) 
+    spatial = NULL, spatialEffect = NULL, reparam = NULL, 
+	prefix=NULL, priors=NULL,
+	brugs=length(grep("unix|linux",
+					.Platform$OS.type,
+					ignore.case=TRUE))
+)
 {
-
     data = getDesignMatrix(formula, data, effects)
     data = na.omit(data)
     covariates = attributes(data)$covariates
@@ -30,7 +35,7 @@ glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile 
         observations = observations, data = data, family = family)
     startingValues = getStartingValues(pql = thepql, ragged = ragged, prefix=prefix, reparam = reparam )
     
-    startingFunction(startingValues, file="getInits.R")
+    startingFunction(startingValues, file=initFile)
 
     spatialEffect = grep("^N[[:graph:]]+Spatial$", names(ragged), 
         value = T)
@@ -43,7 +48,7 @@ glmmBUGS <- function (formula, data, effects, modelFile = "model.bug", initFile 
     writeBugsModel(file=modelFile, effects = effects, covariates = covariates, 
         observations = observations, family = family, spatial = spatialEffect,
 		geostat=geostat,
-        prefix= attributes(ragged)$prefix, reparam =reparam, priors=priors)
+        prefix= attributes(ragged)$prefix, reparam =reparam, priors=priors, brugs=brugs)
 
          return(list(ragged = ragged, startingValues = startingValues, 
         pql = thepql))

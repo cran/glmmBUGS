@@ -6,7 +6,8 @@
   Calls glmmPQL in the MASS library, with the model being specified in the same manner as \code{\link{writeBugsModel}}
 }
 \usage{
-glmmPQLstrings(effects, covariates, observations, data = NULL, family=c("bernoulli", "binomial", "poisson", "gaussian"), ...)
+glmmPQLstrings(effects, covariates, observations, data = NULL, 
+family=c("bernoulli", "binomial", "poisson", "gaussian"), ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,9 +26,9 @@ glmmPQLstrings(effects, covariates, observations, data = NULL, family=c("bernoul
 In addition to the output from glmmPQL, the following are returned
   \item{effects,covariates,observations}{As input}
 }
-\references{}
+ 
 \author{Patrick Brown, \code{patrick.brown@utoronto.ca}}
-\note{}
+ 
 \seealso{\code{\link{getStartingValues}},\code{\link[MASS:glmmPQL]{glmmPQL}}}
 \examples{
 library(nlme)

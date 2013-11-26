@@ -9,6 +9,7 @@ vecPars = grep("\\[[[:digit:]]+\\]$", parnames, value=TRUE)
 matPars =  grep("[[:digit:]+],[[:digit:]]+\\]$", parnames, value=TRUE)
 # scalar parameters
 scPars = parnames[! parnames %in% c(vecPars, matPars)]
+scPars = scPars[grep("^beta",scPars,invert=TRUE)]
 
 
 result = list()
@@ -50,17 +51,30 @@ vecPars = grep("\\[[[:digit:]]+\\]$", parnames, value=TRUE)
 } #end matPars
 
 
-if(!length(scPars))
-  warning("no parameter names")
-
+# if it's a geostatistical model, convert phi to range
+	thephi = grep("^phi", scPars,value=TRUE)
+	for(D in thephi) {
+		thesd = gsub("^phi", "SD", D)
+		if(thesd %in% scPars){
+			# get rid of phi
+			scPars = grep(D, scPars, invert=TRUE,value=TRUE)
+			# and add range
+			therange = gsub("^phi", "range", D)
+			result[[therange]] = thearray[,,D] / thearray[,,thesd]			
+		}
+		
+	}
 
 for(D in scPars)
   result[[D]] = thearray[,,D]
 
+if(!length(scPars))
+	warning("no parameter names")
+
   fixedEffects = grep("^X", names(ragged), value=TRUE)
 
   betas=NULL
-  library(abind)
+ 
   
   # extract betas 
 for(D in fixedEffects) {
@@ -74,12 +88,11 @@ for(D in fixedEffects) {
 	if(length(newnames)== (dim(tobind)[3]) )
 		dimnames(tobind)[[3]] = newnames
 
-	betas = abind(betas, tobind, along=3)
+	betas = abind::abind(betas, tobind, along=3)
 	
 }  
 
-if(!is.null(betas))
-	result$betas = betas
+result$betas = betas
   
 
 
@@ -160,11 +173,12 @@ if(is.null(ragged)) {
         
 	theX = t(ragged[[DX]])
 	# if only one covariate at this level
-	if(D %in% betanames){
-		theseBetas =  result$betas[,,D,drop=F]		
+	if(Dbeta %in% betanames){
+		theseBetas =  result$betas[,,Dbeta,drop=F]		
 	} else { # more than one covariate, have matrices
 	    if(all(rownames(theX) %in% dimnames(result$betas)[[3]]) ) {
-			theseBetas = result$betas[,,rownames(theX),drop=F]
+			theseBetas = result$betas[,,
+					rownames(theX),drop=FALSE]
 		} else {
 			warning("cannot find ",D," , ", DX)
 		}		
@@ -172,7 +186,9 @@ if(is.null(ragged)) {
 	
     for(Dchain in 1:Nchain) {
         themean[,Dchain,] = themean[,Dchain,] + 
-            	theseBetas[,Dchain,] %*% theX
+            	abind::adrop(
+					theseBetas[,Dchain,,drop=FALSE], drop=2
+				)%*% theX
     } 
 	}	# end there are covariates here
 	
