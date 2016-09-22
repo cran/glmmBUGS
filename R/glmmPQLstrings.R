@@ -1,3 +1,4 @@
+#' @export
 `glmmPQLstrings` <-
 function(effects, covariates, observations, data=NULL, 
   family=c("bernoulli", "binomial", "poisson", "gaussian"), ...) {
@@ -22,18 +23,19 @@ function(effects, covariates, observations, data=NULL,
   }
   theformula = theresp ~ 1
   if(length(covariates)) {
-    theformula = update(theformula, as.formula(paste("~ . +", 
+    theformula = stats::update(theformula, stats::as.formula(paste("~ . +", 
       paste(unlist(covariates), collapse="+"), sep="")))
   }
   # add the offset
   if(length(observations) > 1 )
-    theformula = update(theformula, as.formula(paste("~  . + offset(", observations[2], ")", sep="")))  
+    theformula = stats::update(theformula, 
+				stats::as.formula(paste("~  . + offset(", observations[2], ")", sep="")))  
     
-  therandom = as.formula(paste("~1|", paste(effects, collapse="/"), sep=""))
+  therandom = stats::as.formula(paste("~1|", paste(effects, collapse="/"), sep=""))
 
   if(is.character(family))
     if(family=="bernoulli")
-        family = binomial
+        family = "binomial"
 
 #return(list(theformula, therandom, data, theresp))
 

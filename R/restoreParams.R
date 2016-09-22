@@ -1,3 +1,4 @@
+#' @export 
 `restoreParams` <-
 function(bugsResult, ragged=NULL,extraX=NULL) {
                               
@@ -93,8 +94,6 @@ for(D in fixedEffects) {
 }  
 
 result$betas = betas
-  
-
 
 #the random effects
 # find grouping variables, all the variables with one dimensional indices
@@ -242,7 +241,7 @@ if(is.null(ragged)) {
        sdBig = array(result[[paste("SD",Dsub,sep="")]], dimNoV)
 
        # realisations of spatially independent effect for regions without Rstuff
-       VfornoV =  rnorm(prod(dim(sdBig)), 0, sdBig)
+       VfornoV =  stats::rnorm(prod(dim(sdBig)), 0, sdBig)
        # convert to an array       
        VfornoV = array(VfornoV, dimNoV) 
        # add names
@@ -257,7 +256,7 @@ if(is.null(ragged)) {
             result[[DsubSpatial]][,,withSpatial]
         
       # put these results into the posterior simulations array
-      result[[DsubR]] = abind(result[[DsubR]], VfornoV, along=3)
+      result[[DsubR]] = abind::abind(result[[DsubR]], VfornoV, along=3)
       fittedForNoV = VfornoV + array(result$intercept, dimNoV)
 # add covariates if we have them
 if(!is.null(extraX)) {
@@ -270,7 +269,7 @@ haveBeta = colnames(extraX)[colnames(extraX) %in% rownames(theBeta)]
     }
 } #end extraX loop
 
-      result[[Dfitted]] = abind(result[[Dfitted]], fittedForNoV, along=3)
+      result[[Dfitted]] = abind::abind(result[[Dfitted]], fittedForNoV, along=3)
   
       result[[DsubR]] = result[[DsubR]][,,thenames]
       result[[Dfitted]] = result[[Dfitted]][,,thenames]
@@ -278,6 +277,10 @@ haveBeta = colnames(extraX)[colnames(extraX) %in% rownames(theBeta)]
        
 }   #end for D in spatialEffects
      
+
+if(dim(result$betas)[3]==1) {
+	result$betas = result$betas[,,1] 
+}
 
 
   return(result)

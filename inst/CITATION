@@ -1,0 +1,28 @@
+year <- sub("-.*", "", meta$Date)
+note <- sprintf("R package version %s", meta$Version)
+pb = utils::person(c("Patrick", "E"),"Brown")
+lz = utils::person("L","Zhou")
+
+
+utils::bibentry(
+  key = 'glmmBUGS',
+	bibtype = "Article",
+  title        = "{MCMC} for Generalized Linear Mixed Models with {glmmBUGS}",
+  author       = c(pb, lz),
+  journal      = "R-journal",
+  year         = "2010",
+  volume       = "2",
+  url          = "http://journal.r-project.org/archive/2010-1/RJournal_2010-1_Brown+Zhou.pdf"
+)
+
+
+utils::bibentry(
+	key = 'glmmBUGSPackage',
+	bibtype = "Manual",
+  title = "{glmmBUGS}: Generalised Linear Mixed Models and Spatial Models with {WinBUGS}, {Jags}, and {OpenBUGS}",
+  author =c(pb, lz),
+  year = year,
+  note = note,
+  url = "https://CRAN.R-project.org/package=glmmBUGS"
+)
+         

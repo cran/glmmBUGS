@@ -10,10 +10,10 @@ Given a list of effect groups, and the covariates associated with each level, a 
 }
 \usage{
 writeBugsModel(file, effects, covariates, observations, 
-family = c("bernoulli", "binomial", "poisson", "normal", "other"), spatial = NULL, 
-geostat=FALSE, 
+family = c("bernoulli", "binomial", "poisson", "normal", "other"), 
+spatial = NULL,  geostat=FALSE, 
 prefix = "",reparam=NULL, brugs=TRUE, priors=NULL)
-}
+	}
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{file}{
@@ -53,7 +53,7 @@ A file, suitable for passing to the \code{\link[R2WinBUGS:bugs]{bugs}} function 
 }
 \references{
 "Handling unbalanced datasets" in the "Tricks: Advanced Use of the BUGS Language" 
-section of the bugs manual, at \url{http://mathstat.helsinki.fi/openbugs/data/Docu/Tricks.html}
+section of the bugs manual, at \url{http://www.openbugs.net/Manuals/Tricks.html}
 }
 \author{
 Patrick Brown, \email{patrick.brown@utoronto.ca}
@@ -66,6 +66,9 @@ Patrick Brown, \email{patrick.brown@utoronto.ca}
 \examples{
 writeBugsModel("model.bug", effects="Strip",  observations="conc",
   covariates=list(observations="length"),
-  family="normal", priors=c(intercept="dunif(-10,10)") ) 
+  family="normal", priors=c(intercept="dunif(-10,10)") )
+
+cat(scan("model.bug", "a",sep='\n'),sep='\n')
+
 }
 

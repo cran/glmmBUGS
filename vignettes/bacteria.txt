@@ -1,0 +1,29 @@
+model{
+
+for(DID in 1:NID) {
+
+  RID[DID] ~ dnorm(meanID[DID], TID)
+  meanID[DID] <- intercept +inprod(betaID[] , XID[DID,])
+
+  for(Dobservations in SID[DID]:(SID[DID+1]-1)){
+
+    yInt[Dobservations] ~ dbern(meanobservations[Dobservations])
+    logit(meanobservations[Dobservations]) <- RID[DID] + betaobservations * Xobservations[Dobservations]
+
+  }#observations
+}#ID
+
+
+
+
+# priors
+
+intercept  ~ dunif(-1000,1000)
+betaID[1] ~ dunif(-1000,1000)
+betaID[2] ~ dunif(-1000,1000)
+betaobservations ~ dunif(-1000,1000)
+
+TID <- pow(SDID, -2)
+SDID ~ dunif(0, 100)
+
+} # model
