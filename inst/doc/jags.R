@@ -1,4 +1,5 @@
 ### R code from vignette source 'jags.Rnw'
+### Encoding: UTF-8
 
 ###################################################
 ### code chunk number 1: setup
@@ -6,7 +7,8 @@
 library('glmmBUGS')
 haveR2jags = require('R2jags', quietly=TRUE)  
 print(haveR2jags)
-requireNamespace('rjags', quietly=TRUE)
+haveRjags = requireNamespace('rjags', quietly=TRUE)
+print(haveRjags)
 haveRjags = try(
 		loadNamespace('rjags'),
   	silent=TRUE)
@@ -41,13 +43,15 @@ if(haveR2jags) {
       model.file="model.bug", n.chain=3, n.iter=1000, 
       n.burnin=100, n.thin=10, refresh=200,
       working.directory=getwd()) 
-} 
+} else {
+	muscleResult = NULL
+}
 
 
 ###################################################
 ### code chunk number 5: restoreParamsM
 ###################################################
-if(haveR2jags) {
+if(!is.null(muscleResult)) {
 	muscleParams = restoreParams(
 	muscleResult$BUGSoutput, 
 	muscleRagged$ragged) 
@@ -58,8 +62,10 @@ summaryChain(muscleParams)$scalars[,c('mean','2.5pct','97.5pct')]
 ###################################################
 ### code chunk number 6: checkChainM
 ###################################################
-if(haveR2jags) {
+if(!is.null(muscleResult)) {
 	checkChain(muscleParams)
+} else {
+	plot(1, main='Not run, some packages missing')
 }
 
 
@@ -95,14 +101,14 @@ if(haveR2jags) {
       parameters = names(getInits()),
       n.thin = 4)
 } else {
-	bacResult = list()
+	bacResult = NULL
 }
 
 
 ###################################################
 ### code chunk number 10: postprocess
 ###################################################
-if(haveR2jags) {
+if(!is.null(bacResult)) {
 bacParams = restoreParams(bacResult$BUGSoutput,
      bacrag$ragged)
 }
@@ -111,18 +117,19 @@ bacParams = restoreParams(bacResult$BUGSoutput,
 ###################################################
 ### code chunk number 11: results
 ###################################################
-if(haveR2jags) {
-bacsummary = summaryChain(bacParams)
-  
-bacsummary$betas[,c('mean', 'sd')]
+if(!is.null(bacResult)) {
+	bacsummary = summaryChain(bacParams)
+	bacsummary$betas[,c('mean', 'sd')]
 }
 
 
 ###################################################
 ### code chunk number 12: checkChain
 ###################################################
-if(haveR2jags) {
+if(!is.null(bacResult)) {
 	checkChain(bacParams, c("intercept", "SDID"),oneFigure=TRUE)
+} else {
+	plot(1, main='Not run, some packages missing')
 }
 
 
